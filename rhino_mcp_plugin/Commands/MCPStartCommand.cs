@@ -7,6 +7,7 @@ using Rhino.Input;
 using Rhino.Input.Custom;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using System.Net;
 
 namespace RhinoMCPPlugin.Commands
 {
@@ -28,7 +29,47 @@ namespace RhinoMCPPlugin.Commands
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
-            RhinoMCPServerController.StartServer();
+            // Default values
+            string host = "127.0.0.1";
+            int port = 1999;
+            
+            // Get remote server address from user
+            Result res = RhinoGet.GetString("Enter remote MCP server IP address (or press Enter for localhost)", true, ref host);
+            if (res != Result.Success)
+                return res;
+                
+            if (string.IsNullOrWhiteSpace(host))
+                host = "127.0.0.1";
+                
+            // Validate IP address format
+            if (host != "127.0.0.1" && host != "localhost")
+            {
+                try {
+                    IPAddress.Parse(host);
+                }
+                catch (Exception) {
+                    RhinoApp.WriteLine("Invalid IP address format. Please use format like '192.168.1.100'");
+                    return Result.Failure;
+                }
+            }
+            
+            // Get port from user
+            string portStr = "1999";
+            res = RhinoGet.GetString("Enter remote MCP server port (or press Enter for default 1999)", true, ref portStr);
+            if (res != Result.Success)
+                return res;
+                
+            if (!string.IsNullOrWhiteSpace(portStr))
+            {
+                if (!int.TryParse(portStr, out port))
+                {
+                    RhinoApp.WriteLine("Invalid port number. Using default port 1999");
+                    port = 1999;
+                }
+            }
+            
+            RhinoApp.WriteLine($"Connecting to MCP server at {host}:{port}");
+            RhinoMCPServerController.StartServer(host, port);
             return Result.Success;
         }
 

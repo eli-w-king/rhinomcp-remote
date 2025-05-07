@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RhinoMCP Connection Code</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .code-display {
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .connection-code {
+            font-size: 32px;
+            color: #0066cc;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .instructions {
+            margin: 30px 0;
+        }
+        h1 {
+            color: #444;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        h2 {
+            margin-top: 30px;
+        }
+        .button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #0055aa;
+        }
+    </style>
+</head>
+<body>
+    <h1>RhinoMCP Connection</h1>
+    
+    <div class="code-display">
+        <p>Your connection code is:</p>
+        <p class="connection-code" id="connectionCode">Loading...</p>
+        <button class="button" onclick="copyCode()">Copy Code</button>
+    </div>
+    
+    <div class="instructions">
+        <h2>For Rhino Users:</h2>
+        <ol>
+            <li>Open Rhino and make sure the RhinoMCP plugin is installed</li>
+            <li>Run the <code>mcpconnectazure</code> command</li>
+            <li>Choose "Connection Code" when prompted</li>
+            <li>Enter the connection code shown above</li>
+        </ol>
+    </div>
+    
+    <div class="status">
+        <h2>Connected Clients:</h2>
+        <p id="clientCount">Loading...</p>
+        <ul id="clientList"></ul>
+    </div>
+
+    <script>
+        // Function to fetch the connection code
+        async function getConnectionCode() {
+            try {
+                const response = await fetch('/api/code');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('connectionCode').innerText = data.code || 'No active code';
+                } else {
+                    document.getElementById('connectionCode').innerText = 'Error loading code';
+                }
+            } catch (error) {
+                document.getElementById('connectionCode').innerText = 'Error connecting to server';
+                console.error('Error fetching code:', error);
+            }
+        }
+
+        // Function to fetch connected clients
+        async function getConnectedClients() {
+            try {
+                const response = await fetch('/api/clients');
+                if (response.ok) {
+                    const data = await response.json();
+                    const rhinoClients = data.rhino_clients || [];
+                    const mcpClients = data.mcp_clients || [];
+                    
+                    document.getElementById('clientCount').innerText = 
+                        `Rhino Clients: ${rhinoClients.length}, MCP Clients: ${mcpClients.length}`;
+                    
+                    const clientList = document.getElementById('clientList');
+                    clientList.innerHTML = '';
+                    
+                    rhinoClients.forEach(client => {
+                        const li = document.createElement('li');
+                        li.innerText = `${client} (Rhino)`;
+                        clientList.appendChild(li);
+                    });
+                    
+                    mcpClients.forEach(client => {
+                        const li = document.createElement('li');
+                        li.innerText = `${client} (MCP)`;
+                        clientList.appendChild(li);
+                    });
+                } else {
+                    document.getElementById('clientCount').innerText = 'Error loading client information';
+                }
+            } catch (error) {
+                document.getElementById('clientCount').innerText = 'Error connecting to server';
+                console.error('Error fetching clients:', error);
+            }
+        }
+
+        // Function to copy the connection code to clipboard
+        function copyCode() {
+            const codeElement = document.getElementById('connectionCode');
+            const code = codeElement.innerText;
+            
+            if (code && code !== 'Loading...' && code !== 'Error loading code') {
+                navigator.clipboard.writeText(code)
+                    .then(() => alert('Connection code copied to clipboard!'))
+                    .catch(err => console.error('Failed to copy code:', err));
+            }
+        }
+
+        // Load initial data
+        getConnectionCode();
+        getConnectedClients();
+        
+        // Refresh data every 30 seconds
+        setInterval(() => {
+            getConnectionCode();
+            getConnectedClients();
+        }, 30000);
+    </script>
+</body>
+</html>

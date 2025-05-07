@@ -200,18 +200,29 @@ mcp = FastMCP(
 # Global connection for resources (since resources can't access context)
 _rhino_connection = None
 
-def get_rhino_connection():
+def get_rhino_connection(host=None, port=None):
     """Get or create a persistent Rhino connection"""
     global _rhino_connection
     
+    # Check if we need to create a new connection with different parameters
+    if host is not None and port is not None and _rhino_connection is not None:
+        if _rhino_connection.host != host or _rhino_connection.port != port:
+            # Disconnect existing connection to create a new one
+            _rhino_connection.disconnect()
+            _rhino_connection = None
+    
     # Create a new connection if needed
     if _rhino_connection is None:
-        _rhino_connection = RhinoConnection(host="127.0.0.1", port=1999)
+        # Use provided host/port or defaults
+        conn_host = host if host is not None else "127.0.0.1"
+        conn_port = port if port is not None else 1999
+        
+        _rhino_connection = RhinoConnection(host=conn_host, port=conn_port)
         if not _rhino_connection.connect():
-            logger.error("Failed to connect to Rhino")
+            logger.error(f"Failed to connect to Rhino at {conn_host}:{conn_port}")
             _rhino_connection = None
-            raise Exception("Could not connect to Rhino. Make sure the Rhino addon is running.")
-        logger.info("Created new persistent connection to Rhino")
+            raise Exception(f"Could not connect to Rhino at {conn_host}:{conn_port}. Make sure the Rhino addon is running.")
+        logger.info(f"Created new persistent connection to Rhino at {conn_host}:{conn_port}")
     
     return _rhino_connection
 

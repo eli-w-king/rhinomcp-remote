@@ -22,15 +22,20 @@ namespace RhinoMCPPlugin.Commands
         ///<summary>The only instance of this command.</summary>
         public static MCPStopCommand Instance { get; private set; }
 
-        
-
         public override string EnglishName => "mcpstop";
 
         protected override Result RunCommand(RhinoDoc doc, RunMode mode)
         {
-            RhinoMCPServerController.StopServer();
-            return Result.Success;
+            try
+            {
+                Task.Run(async () => await RhinoMCPServerController.StopAsync()).Wait();
+                return Result.Success;
+            }
+            catch (Exception ex)
+            {
+                RhinoApp.WriteLine($"Error stopping MCP: {ex.Message}");
+                return Result.Failure;
+            }
         }
-
     }
 }

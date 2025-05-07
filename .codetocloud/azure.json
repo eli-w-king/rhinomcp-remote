@@ -1,0 +1,49 @@
+{
+  "iacTypes": [
+    "bicep"
+  ],
+  "resources": [
+    {
+      "type": "azureappservice",
+      "instances": [
+        {
+          "name": "appserviceforremotecontrol"
+        }
+      ]
+    },
+    {
+      "type": "azurefunctions",
+      "instances": [
+        {
+          "name": "functionforprocessing"
+        }
+      ]
+    },
+    {
+      "type": "azurestorageaccount",
+      "instances": [
+        {
+          "name": "storageforlogs"
+        }
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "source": "${azureappservice.appserviceforremotecontrol}",
+      "target": "${azurefunctions.functionforprocessing}",
+      "connection": "http",
+      "store": "",
+      "customKeys": {}
+    },
+    {
+      "source": "${azurefunctions.functionforprocessing}",
+      "target": "${azurestorageaccount.storageforlogs}",
+      "connection": "system-identity",
+      "store": "",
+      "customKeys": {}
+    }
+  ],
+  "services": [],
+  "settings": []
+}
