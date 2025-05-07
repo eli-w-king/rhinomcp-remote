@@ -9,18 +9,24 @@ This document outlines how to deploy a cost-optimized Azure setup for your Rhino
 I've created a deployment script that will handle everything for you. The script:
 
 1. Uses your existing resource group `rg-rhinomcp-remote-dev` 
-2. Deploys all necessary Azure resources using free tiers where possible
+2. Deploys all necessary Azure resources using free tiers where possible:
+   - SignalR service (Free_F1 tier) - for real-time communication
+   - Storage account (Standard_LRS) - for storing connection codes
+   - App Service Plan (F1 free tier) - for hosting the server
+   - Web App - for running the Python MCP server
 3. Deploys the Python server code to Azure App Service
 4. Sets up the connection code system
+
+Before deploying, the script will show you what resources will be created and ask for your confirmation.
 
 To run the deployment:
 
 ```bash
 # Make sure the script is executable
-chmod +x deploy-existing-rg.sh
+chmod +x deploy.sh
 
 # Run the script
-./deploy-existing-rg.sh
+./deploy.sh
 ```
 
 ### 2. Using the Connection Codes

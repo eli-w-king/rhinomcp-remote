@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RhinoMCP Connection Codes</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #0078d4;
+            margin-top: 0;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .code-card {
+            background-color: #f0f7ff;
+            border-left: 4px solid #0078d4;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .code {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0078d4;
+            margin: 10px 0;
+        }
+        .details {
+            font-size: 14px;
+            color: #666;
+        }
+        .info {
+            margin-bottom: 20px;
+        }
+        .refresh {
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .refresh:hover {
+            background-color: #006cc1;
+        }
+        .no-codes {
+            padding: 20px;
+            text-align: center;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RhinoMCP Connection Codes</h1>
+        
+        <div class="info">
+            <p>Active connection codes for your RhinoMCP server are shown below. Share these codes with Rhino users to allow them to connect.</p>
+            <button class="refresh" onclick="location.reload()">Refresh List</button>
+        </div>
+        
+        <div id="codes-container">
+            <!-- Codes will be populated here -->
+            <div class="no-codes">Loading connection codes...</div>
+        </div>
+    </div>
+
+    <script>
+        // Fetch connection codes when the page loads
+        document.addEventListener('DOMContentLoaded', fetchCodes);
+
+        function fetchCodes() {
+            fetch('/api/codes')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('codes-container');
+                    container.innerHTML = '';
+                    
+                    if (data.codes && data.codes.length > 0) {
+                        data.codes.forEach(code => {
+                            const created = new Date(code.createdTime).toLocaleString();
+                            const lastAccess = new Date(code.lastAccessTime).toLocaleString();
+                            
+                            const codeCard = document.createElement('div');
+                            codeCard.className = 'code-card';
+                            codeCard.innerHTML = `
+                                <div class="code">${code.code}</div>
+                                <div class="details">
+                                    <strong>Created:</strong> ${created}<br>
+                                    <strong>Last Access:</strong> ${lastAccess}<br>
+                                    <strong>Connections:</strong> ${code.connectionCount}
+                                </div>
+                            `;
+                            container.appendChild(codeCard);
+                        });
+                    } else {
+                        container.innerHTML = '<div class="no-codes">No active connection codes found. Connection codes are generated when the MCP server is started.</div>';
+                    }
+                })
+                .catch(error => {
+                    const container = document.getElementById('codes-container');
+                    container.innerHTML = `<div class="no-codes">Error loading connection codes: ${error.message}</div>`;
+                });
+        }
+    </script>
+</body>
+</html>

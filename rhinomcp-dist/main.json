@@ -1,0 +1,140 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.35.1.17967",
+      "templateHash": "10710659096242739320"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "baseName": {
+      "type": "string",
+      "defaultValue": "rhinomcp",
+      "minLength": 3,
+      "maxLength": 20,
+      "metadata": {
+        "description": "Base name for all resources"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.SignalRService/signalR",
+      "apiVersion": "2023-02-01",
+      "name": "[format('{0}-signalr', parameters('baseName'))]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Free_F1",
+        "capacity": 1
+      },
+      "kind": "SignalR",
+      "properties": {
+        "features": [
+          {
+            "flag": "ServiceMode",
+            "value": "Default"
+          }
+        ],
+        "cors": {
+          "allowedOrigins": [
+            "*"
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2022-05-01",
+      "name": "[format('{0}storage', replace(parameters('baseName'), '-', ''))]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "accessTier": "Hot",
+        "minimumTlsVersion": "TLS1_2",
+        "allowBlobPublicAccess": false,
+        "supportsHttpsTrafficOnly": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-09-01",
+      "name": "[format('{0}-plan', parameters('baseName'))]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "F1"
+      },
+      "kind": "linux",
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-09-01",
+      "name": "[format('{0}-app', parameters('baseName'))]",
+      "location": "[parameters('location')]",
+      "kind": "app,linux",
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', format('{0}-plan', parameters('baseName')))]",
+        "siteConfig": {
+          "linuxFxVersion": "PYTHON|3.10",
+          "ftpsState": "Disabled",
+          "minTlsVersion": "1.2",
+          "appSettings": [
+            {
+              "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+              "value": "true"
+            },
+            {
+              "name": "AZURE_SIGNALR_CONNECTION_STRING",
+              "value": "[listKeys(resourceId('Microsoft.SignalRService/signalR', format('{0}-signalr', parameters('baseName'))), '2023-02-01').primaryConnectionString]"
+            },
+            {
+              "name": "AZURE_STORAGE_CONNECTION_STRING",
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};EndpointSuffix={1};AccountKey={2}', format('{0}storage', replace(parameters('baseName'), '-', '')), environment().suffixes.storage, listKeys(resourceId('Microsoft.Storage/storageAccounts', format('{0}storage', replace(parameters('baseName'), '-', ''))), '2022-05-01').keys[0].value)]"
+            },
+            {
+              "name": "SIGNALR_HUB_URL",
+              "value": "[format('https://{0}.service.signalr.net/client/?hub=rhinomcp', reference(resourceId('Microsoft.SignalRService/signalR', format('{0}-signalr', parameters('baseName'))), '2023-02-01').hostNamePrefix)]"
+            },
+            {
+              "name": "CONNECTION_REGISTRY_URL",
+              "value": "[format('https://{0}-app.azurewebsites.net/api/', parameters('baseName'))]"
+            }
+          ]
+        },
+        "httpsOnly": true
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', format('{0}-plan', parameters('baseName')))]",
+        "[resourceId('Microsoft.SignalRService/signalR', format('{0}-signalr', parameters('baseName')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', format('{0}storage', replace(parameters('baseName'), '-', '')))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "webAppUrl": {
+      "type": "string",
+      "value": "[format('https://{0}-app.azurewebsites.net', parameters('baseName'))]"
+    },
+    "signalRUrl": {
+      "type": "string",
+      "value": "[format('https://{0}.service.signalr.net', reference(resourceId('Microsoft.SignalRService/signalR', format('{0}-signalr', parameters('baseName'))), '2023-02-01').hostNamePrefix)]"
+    }
+  }
+}

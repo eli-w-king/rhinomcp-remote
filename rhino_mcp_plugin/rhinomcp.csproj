@@ -20,8 +20,7 @@
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="7.0.10" />
     <PackageReference Include="RhinoCommon" Version="8.17.25066.7001" ExcludeAssets="runtime" />
   </ItemGroup>
-
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="$([MSBuild]::IsOSPlatform('OSX')) AND Exists('/Applications/Rhino 8.app')">
     <Exec Command="cp $(TargetDir)rhinomcp.rhp '/Applications/Rhino 8.app/Contents/PlugIns/'" />
   </Target>
   

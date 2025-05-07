@@ -34,7 +34,7 @@ namespace RhinoMCPPlugin
                 if (isConnected)
                 {
                     RhinoApp.WriteLine("Already connected to Azure SignalR");
-                    return Task.FromResult(true);
+                    return true;
                 }
 
                 this.serviceUrl = signalRUrl;
